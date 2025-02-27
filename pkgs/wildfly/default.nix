@@ -3,16 +3,24 @@
 stdenv.mkDerivation rec {
   name = "wildfly-${version}";
   version = "35.0.0";
-  src = fetchFromGithub{
-    owner="wildfly";
-    repo="wildfly";
-    rev="35.0.0.Final";
-    sha256="17sbd9kxbn5xvh2fq7n9ivv4dr16871y8bzxrni7picls61fmwpl";
+  src = pkgs.fetchurl{
+    url="https://github.com/wildfly/wildfly/releases/download/35.0.0.Final/wildfly-preview-35.0.0.Final.tar.gz";
+    sha256="6kFVvLtWnfGyvysONvBDa/YuMd/tbSeRANTrKL2/sLE=";
   };
+  unpackPhase = ''
+    tar xzf $src
+    mv wildfly-* wildfly
+  '';
   propegatedBuildInputs = [ pkgs.jdk17 ];
   installPhase = "
-    mkdir -p $out/bin
-    cp -r $src $out/
-    ln -s $out/wildfly/bin/standalone.sh $out/bin/wildfly
+    cp -r wildfly $out/
+    chmod +x $out/bin/standalone.sh
   ";
+  nativeBuildInputs = [ pkgs.makeWrapper ];
+
+  postFixup='' 
+    echo "wrapping using ${pkgs.jdk17}/bin/java"
+    wrapProgram $out/bin/standalone.sh \
+      --set JAVA ${pkgs.jdk17}/bin/java
+  '';
 }
